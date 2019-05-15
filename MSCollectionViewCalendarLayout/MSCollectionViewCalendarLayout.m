@@ -856,45 +856,59 @@ NSUInteger const MSCollectionMinBackgroundZ = 0.0;
 
 #pragma mark Scrolling
 
-- (void)scrollCollectionViewToClosetSectionToCurrentTimeAnimated:(BOOL)animated
-{
-    if (self.collectionView.numberOfSections != 0) {
-        NSInteger closestSectionToCurrentTime = [self closestSectionToCurrentTime];
-        CGPoint contentOffset;
-        CGRect currentTimeHorizontalGridlineattributesFrame = [self.currentTimeHorizontalGridlineAttributes[[NSIndexPath indexPathForItem:0 inSection:0]] frame];
-        if (self.sectionLayoutType == MSSectionLayoutTypeHorizontalTile) {
-            CGFloat yOffset;
-            if (!CGRectEqualToRect(currentTimeHorizontalGridlineattributesFrame, CGRectZero)) {
-                yOffset = nearbyintf(CGRectGetMinY(currentTimeHorizontalGridlineattributesFrame) - (CGRectGetHeight(self.collectionView.frame) / 2.0));
-            } else {
-                yOffset = 0.0;
-            }
-            CGFloat xOffset = self.contentMargin.left + ((self.sectionMargin.left + self.sectionWidth + self.sectionMargin.right) * closestSectionToCurrentTime);
-            contentOffset = CGPointMake(xOffset, yOffset);
-        } else {
-            CGFloat yOffset;
-            if (!CGRectEqualToRect(currentTimeHorizontalGridlineattributesFrame, CGRectZero)) {
-                yOffset = fmaxf(nearbyintf(CGRectGetMinY(currentTimeHorizontalGridlineattributesFrame) - (CGRectGetHeight(self.collectionView.frame) / 2.0)), [self stackedSectionHeightUpToSection:closestSectionToCurrentTime]);
-            } else {
-                yOffset = [self stackedSectionHeightUpToSection:closestSectionToCurrentTime];
-            }
-            contentOffset = CGPointMake(0.0, yOffset);
-        }
-        // Prevent the content offset from forcing the scroll view content off its bounds
-        if (contentOffset.y > (self.collectionView.contentSize.height - self.collectionView.frame.size.height)) {
-            contentOffset.y = (self.collectionView.contentSize.height - self.collectionView.frame.size.height);
-        }
-        if (contentOffset.y < 0.0) {
-            contentOffset.y = 0.0;
-        }
-        if (contentOffset.x > (self.collectionView.contentSize.width - self.collectionView.frame.size.width)) {
-            contentOffset.x = (self.collectionView.contentSize.width - self.collectionView.frame.size.width);
-        }
-        if (contentOffset.x < 0.0) {
-            contentOffset.x = 0.0;
-        }
-        [self.collectionView setContentOffset:contentOffset animated:animated];
+- (void)scrollToSection:(NSInteger)section animated:(BOOL)animated {
+    CGPoint offset = [self contentOffsetForSection:section];
+    [self.collectionView setContentOffset:offset animated:animated];
+}
+
+- (CGPoint)contentOffsetForSection:(NSInteger)section {
+    if (self.collectionView.numberOfSections == 0) {
+        return CGPointZero;
     }
+    CGPoint contentOffset;
+    CGRect currentTimeHorizontalGridlineattributesFrame = [self.currentTimeHorizontalGridlineAttributes[[NSIndexPath indexPathForItem:0 inSection:0]] frame];
+    if (self.sectionLayoutType == MSSectionLayoutTypeHorizontalTile) {
+        CGFloat yOffset;
+        if (!CGRectEqualToRect(currentTimeHorizontalGridlineattributesFrame, CGRectZero)) {
+            yOffset = nearbyintf(CGRectGetMinY(currentTimeHorizontalGridlineattributesFrame) - (CGRectGetHeight(self.collectionView.frame) / 2.0));
+        } else {
+            yOffset = 0.0;
+        }
+        CGFloat xOffset = self.contentMargin.left + ((self.sectionMargin.left + self.sectionWidth + self.sectionMargin.right) * section);
+        contentOffset = CGPointMake(xOffset, yOffset);
+    } else {
+        CGFloat yOffset;
+        if (!CGRectEqualToRect(currentTimeHorizontalGridlineattributesFrame, CGRectZero)) {
+            yOffset = fmaxf(nearbyintf(CGRectGetMinY(currentTimeHorizontalGridlineattributesFrame) - (CGRectGetHeight(self.collectionView.frame) / 2.0)), [self stackedSectionHeightUpToSection:section]);
+        } else {
+            yOffset = [self stackedSectionHeightUpToSection:section];
+        }
+        contentOffset = CGPointMake(0.0, yOffset);
+    }
+    // Prevent the content offset from forcing the scroll view content off its bounds
+    if (contentOffset.y > (self.collectionView.contentSize.height - self.collectionView.frame.size.height)) {
+        contentOffset.y = (self.collectionView.contentSize.height - self.collectionView.frame.size.height);
+    }
+    if (contentOffset.y < 0.0) {
+        contentOffset.y = 0.0;
+    }
+    if (contentOffset.x > (self.collectionView.contentSize.width - self.collectionView.frame.size.width)) {
+        contentOffset.x = (self.collectionView.contentSize.width - self.collectionView.frame.size.width);
+    }
+    if (contentOffset.x < 0.0) {
+        contentOffset.x = 0.0;
+    }
+    return contentOffset;
+}
+
+- (void)scrollCollectionViewToClosestSectionToCurrentTimeAnimated:(BOOL)animated
+{
+    if (self.collectionView.numberOfSections == 0) {
+        return;
+    }
+    NSInteger closestSectionToCurrentTime = [self closestSectionToCurrentTime];
+    CGPoint contentOffset = [self contentOffsetForSection:closestSectionToCurrentTime];
+    [self.collectionView setContentOffset:contentOffset animated:animated];
 }
 
 - (NSInteger)closestSectionToCurrentTime
@@ -1143,11 +1157,13 @@ NSUInteger const MSCollectionMinBackgroundZ = 0.0;
         return [self.cachedEarliestHours[@(section)] integerValue];
     }
     NSInteger earliestHour = NSIntegerMax;
-    for (NSInteger item = 0; item < [self.collectionView numberOfItemsInSection:section]; item++) {
-        NSIndexPath *itemIndexPath = [NSIndexPath indexPathForItem:item inSection:section];
-        NSDateComponents *itemStartTime = [self startTimeForIndexPath:itemIndexPath];
-        if (itemStartTime.hour < earliestHour) {
-            earliestHour = itemStartTime.hour;
+    if (self.shortenDayHoursAccordingToEventsCount) {
+        for (NSInteger item = 0; item < [self.collectionView numberOfItemsInSection:section]; item++) {
+            NSIndexPath *itemIndexPath = [NSIndexPath indexPathForItem:item inSection:section];
+            NSDateComponents *itemStartTime = [self startTimeForIndexPath:itemIndexPath];
+            if (itemStartTime.hour < earliestHour) {
+                earliestHour = itemStartTime.hour;
+            }
         }
     }
     if (earliestHour != NSIntegerMax) {
@@ -1164,24 +1180,27 @@ NSUInteger const MSCollectionMinBackgroundZ = 0.0;
         return [self.cachedLatestHours[@(section)] integerValue];
     }
     NSInteger latestHour = NSIntegerMin;
-    for (NSInteger item = 0; item < [self.collectionView numberOfItemsInSection:section]; item++) {
-        NSIndexPath *itemIndexPath = [NSIndexPath indexPathForItem:item inSection:section];
-        NSDateComponents *itemEndTime = [self endTimeForIndexPath:itemIndexPath];
-        NSInteger itemEndTimeHour;
-        if ([self dayForSection:section].day == itemEndTime.day) {
-            itemEndTimeHour = (itemEndTime.hour + ((itemEndTime.minute > 0) ? 1 : 0));
-        } else {
-            itemEndTimeHour = [[NSCalendar currentCalendar] maximumRangeOfUnit:NSCalendarUnitHour].length + (itemEndTime.hour + ((itemEndTime.minute > 0) ? 1 : 0));;
-        }
-        if (itemEndTimeHour > latestHour) {
-            latestHour = itemEndTimeHour;
+    if (self.shortenDayHoursAccordingToEventsCount) {
+        for (NSInteger item = 0; item < [self.collectionView numberOfItemsInSection:section]; item++) {
+            NSIndexPath *itemIndexPath = [NSIndexPath indexPathForItem:item inSection:section];
+            NSDateComponents *itemEndTime = [self endTimeForIndexPath:itemIndexPath];
+            NSInteger itemEndTimeHour;
+            if ([self dayForSection:section].day == itemEndTime.day) {
+                itemEndTimeHour = (itemEndTime.hour + ((itemEndTime.minute > 0) ? 1 : 0));
+            } else {
+                itemEndTimeHour = [[NSCalendar currentCalendar] maximumRangeOfUnit:NSCalendarUnitHour].length + (itemEndTime.hour + ((itemEndTime.minute > 0) ? 1 : 0));;
+            }
+            if (itemEndTimeHour > latestHour) {
+                latestHour = itemEndTimeHour;
+            }
         }
     }
     if (latestHour != NSIntegerMin) {
         self.cachedLatestHours[@(section)] = @(latestHour);
         return latestHour;
     } else {
-        return 0;
+        NSInteger hours = [[NSCalendar currentCalendar] maximumRangeOfUnit: NSCalendarUnitHour].length;
+        return hours;
     }
 }
 

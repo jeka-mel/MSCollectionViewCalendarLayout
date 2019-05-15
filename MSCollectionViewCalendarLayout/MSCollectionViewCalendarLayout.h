@@ -2,6 +2,18 @@
 //  MSCollectionViewCalendarLayout.h
 //  MSCollectionViewCalendarLayout
 //
+
+//! Project version number for MSCollectionViewCalendarLayout.
+FOUNDATION_EXPORT double MSCollectionViewCalendarLayoutVersionNumber;
+
+//! Project version string for MSCollectionViewCalendarLayout.
+FOUNDATION_EXPORT const unsigned char MSCollectionViewCalendarLayoutVersionString[];
+
+// In this header, you should import all the public headers of your framework using statements like #import <MSCollectionViewCalendarLayout/PublicHeader.h>
+//
+//  MSCollectionViewCalendarLayout.h
+//  MSCollectionViewCalendarLayout
+//
 //  Created by Eric Horacek on 2/18/13.
 //  Copyright (c) 2015 Eric Horacek. All rights reserved.
 //
@@ -26,16 +38,14 @@
 //  THE SOFTWARE.
 //
 
-#import <UIKit/UIKit.h>
-
-extern NSString * const MSCollectionElementKindTimeRowHeader;
-extern NSString * const MSCollectionElementKindDayColumnHeader;
-extern NSString * const MSCollectionElementKindTimeRowHeaderBackground;
-extern NSString * const MSCollectionElementKindDayColumnHeaderBackground;
-extern NSString * const MSCollectionElementKindCurrentTimeIndicator;
-extern NSString * const MSCollectionElementKindCurrentTimeHorizontalGridline;
-extern NSString * const MSCollectionElementKindVerticalGridline;
-extern NSString * const MSCollectionElementKindHorizontalGridline;
+UIKIT_EXTERN NSString * const MSCollectionElementKindTimeRowHeader;
+UIKIT_EXTERN NSString * const MSCollectionElementKindDayColumnHeader;
+UIKIT_EXTERN NSString * const MSCollectionElementKindTimeRowHeaderBackground;
+UIKIT_EXTERN NSString * const MSCollectionElementKindDayColumnHeaderBackground;
+UIKIT_EXTERN NSString * const MSCollectionElementKindCurrentTimeIndicator;
+UIKIT_EXTERN NSString * const MSCollectionElementKindCurrentTimeHorizontalGridline;
+UIKIT_EXTERN NSString * const MSCollectionElementKindVerticalGridline;
+UIKIT_EXTERN NSString * const MSCollectionElementKindHorizontalGridline;
 
 typedef NS_ENUM(NSUInteger, MSSectionLayoutType) {
     MSSectionLayoutTypeHorizontalTile,
@@ -68,11 +78,13 @@ typedef NS_ENUM(NSUInteger, MSHeaderLayoutType) {
 @property (nonatomic) MSSectionLayoutType sectionLayoutType;
 @property (nonatomic) MSHeaderLayoutType headerLayoutType;
 @property (nonatomic) BOOL displayHeaderBackgroundAtOrigin;
+@property (nonatomic) BOOL shortenDayHoursAccordingToEventsCount;
 
 - (NSDate *)dateForTimeRowHeaderAtIndexPath:(NSIndexPath *)indexPath;
 - (NSDate *)dateForDayColumnHeaderAtIndexPath:(NSIndexPath *)indexPath;
 
-- (void)scrollCollectionViewToClosetSectionToCurrentTimeAnimated:(BOOL)animated;
+- (void)scrollToSection:(NSInteger)section animated:(BOOL)animated;
+- (void)scrollCollectionViewToClosestSectionToCurrentTimeAnimated:(BOOL)animated;
 
 // Since a "reloadData" on the UICollectionView doesn't call "prepareForCollectionViewUpdates:", this method must be called first to flush the internal caches
 - (void)invalidateLayoutCache;
@@ -89,3 +101,4 @@ typedef NS_ENUM(NSUInteger, MSHeaderLayoutType) {
 - (NSDate *)currentTimeComponentsForCollectionView:(UICollectionView *)collectionView layout:(MSCollectionViewCalendarLayout *)collectionViewLayout;
 
 @end
+
